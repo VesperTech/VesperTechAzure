@@ -1,0 +1,64 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  backendResourceGroup: 'my-tfstate-rg'
+  backendStorageAccount: 'mytfstateaccount'
+  backendContainer: 'tfstate'
+  backendKey: 'terraform.tfstate'
+  environment: 'dev'
+
+stages:
+  - stage: Terraform_Init
+    jobs:
+      - job: init
+        steps:
+          - checkout: self
+
+          - task: TerraformInstaller@1
+            inputs:
+              terraformVersion: '4.6.0'  # Set your required Terraform version
+
+          - script: |
+              terraform init \
+                -backend-config="resource_group_name=$(backendResourceGroup)" \
+                -backend-config="storage_account_name=$(backendStorageAccount)" \
+                -backend-config="container_name=$(backendContainer)" \
+                -backend-config="key=$(backendKey)"
+            displayName: 'Terraform Init'
+
+  - stage: Terraform_Plan
+    jobs:
+      - job: plan
+        steps:
+          - checkout: self
+
+          - script: terraform plan -out=tfplan
+            displayName: 'Terraform Plan'
+
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: '$(System.DefaultWorkingDirectory)/tfplan'
+              artifact: 'tfplan'
+              publishLocation: 'pipeline'
+
+  - stage: Terraform_Apply
+    dependsOn: Terraform_Plan
+    condition: succeeded()
+    jobs:
+      - job: apply
+        steps:
+          - checkout: self
+
+          - download: current
+            artifact: tfplan
+
+          - script: terraform apply tfplan
+            displayName: 'Terraform Apply'
