@@ -6,7 +6,7 @@ trigger:
   - main
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: Default
 
 variables:
   backendResourceGroup: 'my-tfstate-rg'
