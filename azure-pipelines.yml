@@ -42,7 +42,7 @@ stages:
                 -backend-config="container_name=$(backendContainer)" \
                 -backend-config="key=$(backendKey)"
             displayName: 'Terraform Init'
-            env:
+            env:object
             ARM_CLIENT_ID: $(ARM_CLIENT_ID)
             ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
             ARM_TENANT_ID: $(ARM_TENANT_ID)
