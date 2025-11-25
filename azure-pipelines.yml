@@ -20,7 +20,7 @@ stages:
 
           - task: TerraformInstaller@1
             inputs:
-              terraformVersion: '4.6.0'  # Set your required Terraform version
+              terraformVersion: 'latest'  # Set your required Terraform version
 
           - script: |
               terraform init \
