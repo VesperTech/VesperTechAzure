@@ -12,72 +12,49 @@ variables:
   environment: 'dev'
 
 stages:
-# ------------------- #
-# STAGE 1: INIT
-# ------------------- #
-- stage: Terraform_Init
-  jobs:
-    - job: init
-      steps:
-        - checkout: self
+  - stage: Terraform_Init
+    jobs:
+      - job: init
+        steps:
+          - checkout: self
 
-        - task: AzureCLI@2
-          inputs:
-            azureSubscription: 'terraform'
-            scriptType: bash
-            scriptLocation: inlineScript
-            inlineScript: |
-              echo "Logged into Azure using service connection"
+          - task: TerraformInstaller@1
+            inputs:
+              terraformVersion: '4.6.0'  # Set your required Terraform version
 
-        - task: TerraformInstaller@1
-          inputs:
-            terraformVersion: 'latest'
+          - script: |
+              terraform init \
+                -backend-config="resource_group_name=$(backendResourceGroup)" \
+                -backend-config="storage_account_name=$(backendStorageAccount)" \
+                -backend-config="container_name=$(backendContainer)" \
+                -backend-config="key=$(backendKey)"
+            displayName: 'Terraform Init'
 
-        - script: |
-            terraform init \
-              -backend-config="resource_group_name=$(backendResourceGroup)" \
-              -backend-config="storage_account_name=$(backendStorageAccount)" \
-              -backend-config="container_name=$(backendContainer)" \
-              -backend-config="key=$(backendKey)"
-          displayName: 'Terraform Init'
-          env:
-            NAME: $(VARIABLES)
-            ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-            ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-            ARM_TENANT_ID: $(ARM_TENANT_ID)
-            ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+  - stage: Terraform_Plan
+    jobs:
+      - job: plan
+        steps:
+          - checkout: self
 
-# ------------------- #
-# STAGE 2: PLAN
-# ------------------- #
-- stage: Terraform_Plan
-  jobs:
-    - job: plan
-      steps:
-        - checkout: self
+          - script: terraform plan -out=tfplan
+            displayName: 'Terraform Plan'
 
-        - script: terraform plan -out=tfplan
-          displayName: 'Terraform Plan'
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: '$(System.DefaultWorkingDirectory)/tfplan'
+              artifact: 'tfplan'
+              publishLocation: 'pipeline'
 
-        - task: PublishPipelineArtifact@1
-          inputs:
-            targetPath: '$(System.DefaultWorkingDirectory)/tfplan'
-            artifact: 'tfplan'
-            publishLocation: 'pipeline'
+  - stage: Terraform_Apply
+    dependsOn: Terraform_Plan
+    condition: succeeded()
+    jobs:
+      - job: apply
+        steps:
+          - checkout: self
 
-# ------------------- #
-# STAGE 3: APPLY
-# ------------------- #
-- stage: Terraform_Apply
-  dependsOn: Terraform_Plan
-  condition: succeeded()
-  jobs:
-    - job: apply
-      steps:
-        - checkout: self
+          - download: current
+            artifact: tfplan
 
-        - download: current
-          artifact: tfplan
-
-        - script: terraform apply tfplan
-          displayName: 'Terraform Apply'
+          - script: terraform apply tfplan
+            displayName: 'Terraform Apply'
