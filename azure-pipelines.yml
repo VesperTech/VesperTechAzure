@@ -20,7 +20,7 @@ stages:
 
           - task: TerraformInstaller@1
             inputs:
-              terraformVersion: '4.6.0'  # Set your required Terraform version
+              terraformVersion: 'latest'  # Set your required Terraform version
 
           - script: |
               terraform init \
@@ -29,7 +29,12 @@ stages:
                 -backend-config="container_name=$(backendContainer)" \
                 -backend-config="key=$(backendKey)"
             displayName: 'Terraform Init'
-
+            env:
+                NAME: $(VARIABLES)
+                ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+                ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+                ARM_TENANT_ID: $(ARM_TENANT_ID)
+                ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
   - stage: Terraform_Plan
     jobs:
       - job: plan
