@@ -29,7 +29,12 @@ stages:
                 -backend-config="container_name=$(backendContainer)" \
                 -backend-config="key=$(backendKey)"
             displayName: 'Terraform Init'
-
+            env:
+                NAME: $(VARIABLES)
+                ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+                ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+                ARM_TENANT_ID: $(ARM_TENANT_ID)
+                ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
   - stage: Terraform_Plan
     jobs:
       - job: plan
