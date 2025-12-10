@@ -11,6 +11,8 @@ variables:
   backendKey: 'terraform.tfstate'
   environment: 'dev'
   TF_SKIP_CHECKPOINT: 'true'  # <-- Disable Terraform checkpoint globally
+
+
 stages:
   - stage: Terraform_Init
     jobs:
