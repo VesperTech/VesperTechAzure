@@ -10,7 +10,7 @@ variables:
   backendContainer: 'tfstate'
   backendKey: 'terraform.tfstate'
   environment: 'dev'
-
+  TF_SKIP_CHECKPOINT: 'true'  # <-- Disable Terraform checkpoint globally
 stages:
   - stage: Terraform_Init
     jobs:
@@ -21,6 +21,7 @@ stages:
           - task: TerraformInstaller@1
             inputs:
               terraformVersion: 'latest'  # Set your required Terraform version
+          
 
           - script: |
               terraform init \
@@ -30,6 +31,7 @@ stages:
                 -backend-config="key=$(backendKey)"
             displayName: 'Terraform Init'
             env:
+                TF_SKIP_CHECKPOINT: $(TF_SKIP_CHECKPOINT) 
                 NAME: $(VARIABLES)
                 ARM_CLIENT_ID: $(ARM_CLIENT_ID)
                 ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
