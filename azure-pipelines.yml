@@ -2,7 +2,7 @@ trigger:
   - main
 
 pool:
-  name: Default  # Your self-hosted Windows agent pool
+  name: Default  # Your self-hosted Windows agent
 
 variables:
   backendResourceGroup: 'VSP-TCH'
@@ -11,11 +11,12 @@ variables:
   backendKey: 'terraform.tfstate'
   environment: 'dev'
 
-  # Disable the Terraform checkpoint API (prevents self-signed cert error)
+  # Disable the Terraform checkpoint API to avoid self-signed cert errors
   TF_SKIP_CHECKPOINT: 'true'
   CHECKPOINT_DISABLE: '1'
 
 stages:
+
 # ----------------------------------------------------------
 # STAGE 1 — TERRAFORM INIT
 # ----------------------------------------------------------
@@ -26,10 +27,9 @@ stages:
         steps:
           - checkout: self
 
-          - task: TerraformInstaller@1
-            displayName: "Install Terraform"
-            inputs:
-              terraformVersion: 'latest'
+          - script: |
+              terraform version
+            displayName: "Verify Terraform Installed"
 
           - script: |
               terraform init ^
@@ -41,9 +41,9 @@ stages:
             env:
               TF_SKIP_CHECKPOINT: $(TF_SKIP_CHECKPOINT)
               CHECKPOINT_DISABLE: $(CHECKPOINT_DISABLE)
-              ARM_CLIENT_ID:       $(ARM_CLIENT_ID)
-              ARM_CLIENT_SECRET:   $(ARM_CLIENT_SECRET)
-              ARM_TENANT_ID:       $(ARM_TENANT_ID)
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
               ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
 
 # ----------------------------------------------------------
@@ -60,13 +60,13 @@ stages:
 
           - script: |
               terraform plan -out=tfplan
-            displayName: "Run Terraform Plan"
+            displayName: "Terraform Plan"
             env:
               TF_SKIP_CHECKPOINT: $(TF_SKIP_CHECKPOINT)
               CHECKPOINT_DISABLE: $(CHECKPOINT_DISABLE)
-              ARM_CLIENT_ID:       $(ARM_CLIENT_ID)
-              ARM_CLIENT_SECRET:   $(ARM_CLIENT_SECRET)
-              ARM_TENANT_ID:       $(ARM_TENANT_ID)
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
               ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
 
           - task: PublishPipelineArtifact@1
@@ -91,18 +91,17 @@ stages:
           - download: current
             artifact: tfplan
 
-          - task: TerraformInstaller@1
-            displayName: "Install Terraform"
-            inputs:
-              terraformVersion: 'latest'
+          - script: |
+              terraform version
+            displayName: "Verify Terraform Installed"
 
           - script: |
-              terraform apply tfplan
+              terraform apply -auto-approve tfplan
             displayName: "Terraform Apply"
             env:
               TF_SKIP_CHECKPOINT: $(TF_SKIP_CHECKPOINT)
               CHECKPOINT_DISABLE: $(CHECKPOINT_DISABLE)
-              ARM_CLIENT_ID:       $(ARM_CLIENT_ID)
-              ARM_CLIENT_SECRET:   $(ARM_CLIENT_SECRET)
-              ARM_TENANT_ID:       $(ARM_TENANT_ID)
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
               ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
