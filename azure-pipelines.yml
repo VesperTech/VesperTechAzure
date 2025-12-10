@@ -17,13 +17,13 @@ stages:
       - job: init
         steps:
           - checkout: self
-
-          - task: TerraformInstaller@1
-            inputs:
-              terraformVersion: 'latest'  # Set your required Terraform version
           - script: |
               export CHECKPOINT_DISABLE=1
               displayName: "Disable Terraform Checkpoint"
+          - task: TerraformInstaller@1
+            inputs:
+              terraformVersion: 'latest'  # Set your required Terraform version
+          
 
           - script: |
               terraform init \
