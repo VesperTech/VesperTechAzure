@@ -1,5 +1,7 @@
 trigger:
-  - main
+  branches:
+    include:
+      - main
 
 pool:
   name: Default  # Your self-hosted Windows agent
@@ -37,6 +39,7 @@ stages:
                 -backend-config="storage_account_name=$(backendStorageAccount)" ^
                 -backend-config="container_name=$(backendContainer)" ^
                 -backend-config="key=$(backendKey)"
+                -backend-config="use_cli=false"
             displayName: "Terraform Init"
             env:
               TF_SKIP_CHECKPOINT: $(TF_SKIP_CHECKPOINT)
