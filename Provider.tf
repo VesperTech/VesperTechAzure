@@ -1,19 +1,3 @@
-terraform {
-    required_providers{
-        azurerm={
-            source = "hashicorp/azurerm"
-            version = "4.6.0"
-        }
-    }
-}
-
-provider "azurerm" {
-  subscription_id = var.azure_subscription_id
-  tenant_id = var.azure_tenant_id
-  client_id = var.azure_client_id
-  client_secret = var.azure_client_secret
-  features {}
-}
-terraform {
-    backend "local" {}
- }
+version https://git-lfs.github.com/spec/v1
+oid sha256:f2cd885a19ba792ee8ef563b41242dde3eac76d56c81e101f5aa2a6cd5473bd8
+size 392
