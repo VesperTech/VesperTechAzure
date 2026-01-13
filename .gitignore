@@ -5,7 +5,6 @@
 terraform.tfvars
 crash.log
 *.tfplan
-azure-pipelines.yml
 terraform.exe
 Plan 2/Terraformplan.tf
 Plan_2/Terraformplan.tf
