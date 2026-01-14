@@ -9,5 +9,5 @@ terraform.exe
 Plan 2/Terraformplan.tf
 Plan_2/Terraformplan.tf
 .gitattributes
-
+variables.tf
 serviceprincplet.tfvars

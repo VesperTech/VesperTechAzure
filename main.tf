@@ -1,36 +1,6 @@
 #define varaiables for service principle crednetials
 
-variable "azure_subscription_id" { 
-    default= "992ae502-348d-4903-9aa6-809c92caa1b3"
-}
 
-
-variable "azure_tenant_id" { 
-    default= "7150d3a3-6de0-48f5-93a7-58e787a47c17"
-}
-
-
-variable  "azure_client_id" {
-default= "1010336e-65f4-4ce4-b340-07ae55707655"
-}
-
-variable "azure_client_secret" {
-
- default = "SjU8Q~WSz8Npznpmt5WkFhekakOONrampZLXqc1h"
-
-  sensitive = true
-}
-
-variable "github_token" {
-  default= "Gr3@tJ0y324!"
-  type      = string
-  sensitive = true
-}
-
-variable "github_repo" {
-  default ="https://github.com/VesperTech/VesperTechAzure"
-  type = string
-}
 
 
 resource "azurerm_resource_group" "VesperTech" {
