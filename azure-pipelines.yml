@@ -55,17 +55,12 @@ stages:
       - job: plan
         steps:
           - checkout: self
-
-          - script: |
-              terraform plan -out=tfplan
-            displayName: "Terraform Plan"
-            env:
-              TF_SKIP_CHECKPOINT: $(TF_SKIP_CHECKPOINT)
-              CHECKPOINT_DISABLE: $(CHECKPOINT_DISABLE)
-              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-              ARM_TENANT_ID: $(ARM_TENANT_ID)
-              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+          - task: TerraformTask@5
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              environmentServiceNameAzureRM: 'Azurerm'
+              commandOptions: '-out=tfplan'
 
           - task: PublishPipelineArtifact@1
             inputs:
