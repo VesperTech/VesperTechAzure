@@ -22,6 +22,7 @@ stages:
 # ----------------------------------------------------------
 # STAGE 1 — TERRAFORM INIT
 # ----------------------------------------------------------
+
   - stage: Terraform_Init
     displayName: "Terraform Init"
     jobs:
@@ -32,23 +33,17 @@ stages:
           - script: |
               terraform version
             displayName: "Verify Terraform Installed"
-
-          - script: |
-              terraform init ^
-                -backend-config="resource_group_name=$(backendResourceGroup)" ^
-                -backend-config="storage_account_name=$(backendStorageAccount)" ^
-                -backend-config="container_name=$(backendContainer)" ^
-                -backend-config="key=$(backendKey)"
-                -backend-config="use_cli=false"
+          - task: TerraformTask@5
             displayName: "Terraform Init"
-            env:
-              TF_SKIP_CHECKPOINT: $(TF_SKIP_CHECKPOINT)
-              CHECKPOINT_DISABLE: $(CHECKPOINT_DISABLE)
-              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-              ARM_TENANT_ID: $(ARM_TENANT_ID)
-              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
-
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              backendServiceArm: 'Azurerm'
+              backendAzureRmResourceGroupName: 'VSP-TCH'
+              backendAzureRmStorageAccountName: 'vesperstorage'
+              backendAzureRmContainerName: 'tfstate'
+              backendAzureRmKey: 'terraform.tfstate'
+                
 # ----------------------------------------------------------
 # STAGE 2 — TERRAFORM PLAN
 # ----------------------------------------------------------
