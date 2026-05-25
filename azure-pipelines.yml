@@ -39,7 +39,7 @@ stages:
             inputs:
               provider: 'azurerm'
               command: 'init'
-              backendType: 'Azurerm'
+              environmentServiceNameAzureRM: 'IaC'
               backendServiceArm: '$(serviceConnection)'
               backendAzureRmResourceGroupName: 'VSP-TCH'
               backendAzureRmStorageAccountName: 'vesperstorage'
@@ -62,7 +62,7 @@ stages:
             inputs:
               provider: 'azurerm'
               command: 'init'
-              backendType: 'Azurerm'
+              environmentServiceNameAzureRM: 'IaC'
               backendServiceArm: '$(serviceConnection)'
               backendAzureRmResourceGroupName: 'VSP-TCH'
               backendAzureRmStorageAccountName: 'vesperstorage'
@@ -105,7 +105,7 @@ stages:
             inputs:
               provider: 'azurerm'
               command: 'init'
-              backendType: 'Azurerm'
+              environmentServiceNameAzureRM: 'IaC'
               backendServiceArm: '$(serviceConnection)'
               backendAzureRmResourceGroupName: 'VSP-TCH'
               backendAzureRmStorageAccountName: 'vesperstorage'
