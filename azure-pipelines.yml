@@ -7,18 +7,16 @@ pool:
   name: Default  # Your self-hosted Windows agent
 
 variables:
-  serviceConnection: 'IaC'
   backendResourceGroup: 'VSP-TCH'
   backendStorageAccount: 'vesperstorage'
   backendContainer: 'tfstate'
   backendKey: 'terraform.tfstate'
   environment: 'dev'
 
-  # --- GLOBAL ENVIRONMENT BYPASSES ---
+  # Global bypasses for raw command-line tools
   TF_SKIP_CHECKPOINT: 'true'
   CHECKPOINT_DISABLE: '1'
   GIT_SSL_NO_VERIFY: 'true'
-  TF_PROXY_FROM_ENV: 'true' # Tells Terraform to respect the Windows Trusted Root Store
 
 stages:
 
@@ -36,28 +34,21 @@ stages:
               terraform version
             displayName: "Verify Terraform Installed"
 
-          - task: AzureCLI@2
-            displayName: "Export Certs & Terraform Init"
-            inputs:
-              azureSubscription: '$(serviceConnection)'
-              scriptType: 'ps'
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                # Export the local Windows Root CA store to a PEM bundle for Terraform's Go engine
-                Get-ChildItem Cert:\LocalMachine\Root | 
-                    ForEach-Object { 
-                        "#[$_]"
-                        [System.Convert]::ToBase64String($_.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert), 'InsertLineBreaks')
-                    } > "$(System.DefaultWorkingDirectory)\agent_certs.pem"
-                
-                $env:SSL_CERT_FILE="$(System.DefaultWorkingDirectory)\agent_certs.pem"
-                $env:CURL_CA_BUNDLE="$(System.DefaultWorkingDirectory)\agent_certs.pem"
-                
-                terraform init `
-                  -backend-config="resource_group_name=$(backendResourceGroup)" `
-                  -backend-config="storage_account_name=$(backendStorageAccount)" `
-                  -backend-config="container_name=$(backendContainer)" `
-                  -backend-config="key=$(backendKey)"
+          - powershell: |
+              # Force the local PowerShell session to use TLS 1.2
+              [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+              
+              terraform init `
+                -backend-config="resource_group_name=$(backendResourceGroup)" `
+                -backend-config="storage_account_name=$(backendStorageAccount)" `
+                -backend-config="container_name=$(backendContainer)" `
+                -backend-config="key=$(backendKey)"
+            displayName: "Bypass Tasks & Init"
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
                 
 # ----------------------------------------------------------
 # STAGE 2 — TERRAFORM PLAN
@@ -71,24 +62,22 @@ stages:
         steps:
           - checkout: self
           
-          - task: AzureCLI@2
+          - powershell: |
+              [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+              
+              terraform init `
+                -backend-config="resource_group_name=$(backendResourceGroup)" `
+                -backend-config="storage_account_name=$(backendStorageAccount)" `
+                -backend-config="container_name=$(backendContainer)" `
+                -backend-config="key=$(backendKey)"
+              
+              terraform plan -out="$(System.DefaultWorkingDirectory)\tfplan"
             displayName: "Terraform Init & Plan"
-            inputs:
-              azureSubscription: '$(serviceConnection)'
-              scriptType: 'ps'
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                Get-ChildItem Cert:\LocalMachine\Root | ForEach-Object { "#[$_]"; [System.Convert]::ToBase64String($_.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert), 'InsertLineBreaks') } > "$(System.DefaultWorkingDirectory)\agent_certs.pem"
-                $env:SSL_CERT_FILE="$(System.DefaultWorkingDirectory)\agent_certs.pem"
-                $env:CURL_CA_BUNDLE="$(System.DefaultWorkingDirectory)\agent_certs.pem"
-
-                terraform init `
-                  -backend-config="resource_group_name=$(backendResourceGroup)" `
-                  -backend-config="storage_account_name=$(backendStorageAccount)" `
-                  -backend-config="container_name=$(backendContainer)" `
-                  -backend-config="key=$(backendKey)"
-                
-                terraform plan -out="$(System.DefaultWorkingDirectory)\tfplan"
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
 
           - task: PublishPipelineArtifact@1
             displayName: "Publish Plan Artifact"
@@ -112,21 +101,19 @@ stages:
           - download: current
             artifact: tfplan
 
-          - task: AzureCLI@2
+          - powershell: |
+              [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+              
+              terraform init `
+                -backend-config="resource_group_name=$(backendResourceGroup)" `
+                -backend-config="storage_account_name=$(backendStorageAccount)" `
+                -backend-config="container_name=$(backendContainer)" `
+                -backend-config="key=$(backendKey)"
+              
+              terraform apply -auto-approve "$(Pipeline.Workspace)\tfplan\tfplan"
             displayName: "Terraform Init & Apply"
-            inputs:
-              azureSubscription: '$(serviceConnection)'
-              scriptType: 'ps'
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                Get-ChildItem Cert:\LocalMachine\Root | ForEach-Object { "#[$_]"; [System.Convert]::ToBase64String($_.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert), 'InsertLineBreaks') } > "$(System.DefaultWorkingDirectory)\agent_certs.pem"
-                $env:SSL_CERT_FILE="$(System.DefaultWorkingDirectory)\agent_certs.pem"
-                $env:CURL_CA_BUNDLE="$(System.DefaultWorkingDirectory)\agent_certs.pem"
-
-                terraform init `
-                  -backend-config="resource_group_name=$(backendResourceGroup)" `
-                  -backend-config="storage_account_name=$(backendStorageAccount)" `
-                  -backend-config="container_name=$(backendContainer)" `
-                  -backend-config="key=$(backendKey)"
-                
-                terraform apply -auto-approve "$(Pipeline.Workspace)\tfplan\tfplan"
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
