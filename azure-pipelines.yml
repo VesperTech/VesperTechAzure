@@ -14,11 +14,10 @@ variables:
   backendKey: 'terraform.tfstate'
   environment: 'dev'
 
-  # --- CERTIFICATE / SSL BYPASS VARIABLES ---
   TF_SKIP_CHECKPOINT: 'true'
   CHECKPOINT_DISABLE: '1'
-  AZURE_CLI_DISABLE_CONNECTION_VERIFICATION: '1' # Forces Azure CLI to ignore the self-signed proxy cert
-  GIT_SSL_NO_VERIFY: 'true'                      # Keeps checkout from throwing SSL errors
+  AZURE_CLI_DISABLE_CONNECTION_VERIFICATION: '1'
+  GIT_SSL_NO_VERIFY: 'true'
 
 stages:
 
@@ -32,19 +31,26 @@ stages:
         steps:
           - checkout: self
 
-          - script: |
-              terraform version
-            displayName: "Verify Terraform Installed"
-
           - task: AzureCLI@2
-            displayName: "Terraform Init"
+            displayName: "Export Certs & Terraform Init"
             inputs:
               azureSubscription: '$(serviceConnection)'
               scriptType: 'ps'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                # Set environment variables inside the PowerShell session context
                 $env:AZURE_CLI_DISABLE_CONNECTION_VERIFICATION="1"
+                
+                # 1. Export Windows Trusted Root CAs to a file for Terraform
+                Write-Host "Exporting trusted root certificates..."
+                Get-ChildItem Cert:\LocalMachine\Root | 
+                    ForEach-Object { 
+                        "#[$_]"
+                        [System.Convert]::ToBase64String($_.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert), 'InsertLineBreaks')
+                    } > "$(System.DefaultWorkingDirectory)\agent_certs.pem"
+                
+                # 2. Tell Terraform and Azure tools to use this specific bundle
+                $env:SSL_CERT_FILE="$(System.DefaultWorkingDirectory)\agent_certs.pem"
+                $env:CURL_CA_BUNDLE="$(System.DefaultWorkingDirectory)\agent_certs.pem"
                 
                 terraform init `
                   -backend-config="resource_group_name=$(backendResourceGroup)" `
@@ -72,6 +78,12 @@ stages:
               scriptLocation: 'inlineScript'
               inlineScript: |
                 $env:AZURE_CLI_DISABLE_CONNECTION_VERIFICATION="1"
+
+                # Regenerate cert bundle for this separate workspace/job context
+                Get-ChildItem Cert:\LocalMachine\Root | ForEach-Object { "#[$_]"; [System.Convert]::ToBase64String($_.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert), 'InsertLineBreaks') } > "$(System.DefaultWorkingDirectory)\agent_certs.pem"
+                
+                $env:SSL_CERT_FILE="$(System.DefaultWorkingDirectory)\agent_certs.pem"
+                $env:CURL_CA_BUNDLE="$(System.DefaultWorkingDirectory)\agent_certs.pem"
 
                 terraform init `
                   -backend-config="resource_group_name=$(backendResourceGroup)" `
@@ -111,6 +123,11 @@ stages:
               scriptLocation: 'inlineScript'
               inlineScript: |
                 $env:AZURE_CLI_DISABLE_CONNECTION_VERIFICATION="1"
+
+                Get-ChildItem Cert:\LocalMachine\Root | ForEach-Object { "#[$_]"; [System.Convert]::ToBase64String($_.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert), 'InsertLineBreaks') } > "$(System.DefaultWorkingDirectory)\agent_certs.pem"
+                
+                $env:SSL_CERT_FILE="$(System.DefaultWorkingDirectory)\agent_certs.pem"
+                $env:CURL_CA_BUNDLE="$(System.DefaultWorkingDirectory)\agent_certs.pem"
 
                 terraform init `
                   -backend-config="resource_group_name=$(backendResourceGroup)" `
