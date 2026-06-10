@@ -14,9 +14,11 @@ variables:
   backendKey: 'terraform.tfstate'
   environment: 'dev'
 
-  # Disable the Terraform checkpoint API to avoid self-signed cert errors
+  # --- CERTIFICATE / SSL BYPASS VARIABLES ---
   TF_SKIP_CHECKPOINT: 'true'
   CHECKPOINT_DISABLE: '1'
+  AZURE_CLI_DISABLE_CONNECTION_VERIFICATION: '1' # Forces Azure CLI to ignore the self-signed proxy cert
+  GIT_SSL_NO_VERIFY: 'true'                      # Keeps checkout from throwing SSL errors
 
 stages:
 
@@ -41,6 +43,9 @@ stages:
               scriptType: 'ps'
               scriptLocation: 'inlineScript'
               inlineScript: |
+                # Set environment variables inside the PowerShell session context
+                $env:AZURE_CLI_DISABLE_CONNECTION_VERIFICATION="1"
+                
                 terraform init `
                   -backend-config="resource_group_name=$(backendResourceGroup)" `
                   -backend-config="storage_account_name=$(backendStorageAccount)" `
@@ -66,6 +71,8 @@ stages:
               scriptType: 'ps'
               scriptLocation: 'inlineScript'
               inlineScript: |
+                $env:AZURE_CLI_DISABLE_CONNECTION_VERIFICATION="1"
+
                 terraform init `
                   -backend-config="resource_group_name=$(backendResourceGroup)" `
                   -backend-config="storage_account_name=$(backendStorageAccount)" `
@@ -103,6 +110,8 @@ stages:
               scriptType: 'ps'
               scriptLocation: 'inlineScript'
               inlineScript: |
+                $env:AZURE_CLI_DISABLE_CONNECTION_VERIFICATION="1"
+
                 terraform init `
                   -backend-config="resource_group_name=$(backendResourceGroup)" `
                   -backend-config="storage_account_name=$(backendStorageAccount)" `
