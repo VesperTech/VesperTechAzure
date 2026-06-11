@@ -17,6 +17,13 @@ variables:
   TF_SKIP_CHECKPOINT: 'true'
   CHECKPOINT_DISABLE: '1'
   GIT_SSL_NO_VERIFY: 'true'
+  
+  # --- FORCE MAPPING FROM AZURE DEVOPS UI ---
+  # This tells the YAML parser to explicitly look for these names in your UI variables
+  ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+  ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+  ARM_TENANT_ID: $(ARM_TENANT_ID)
+  ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
 
 stages:
 
