@@ -35,8 +35,10 @@ stages:
             displayName: "Verify Terraform Installed"
 
           - powershell: |
-              # Force the local PowerShell session to use TLS 1.2
               [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+              
+              # Force Terraform to trust your corporate firewall certs installed on Windows
+              $env:TF_PROXY_FROM_ENV="true"
               
               terraform init `
                 -backend-config="resource_group_name=$(backendResourceGroup)" `
@@ -45,6 +47,7 @@ stages:
                 -backend-config="key=$(backendKey)"
             displayName: "Bypass Tasks & Init"
             env:
+              # Force lowercase/uppercase tracking alignment
               ARM_CLIENT_ID: $(ARM_CLIENT_ID)
               ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
               ARM_TENANT_ID: $(ARM_TENANT_ID)
@@ -64,6 +67,7 @@ stages:
           
           - powershell: |
               [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+              $env:TF_PROXY_FROM_ENV="true"
               
               terraform init `
                 -backend-config="resource_group_name=$(backendResourceGroup)" `
@@ -103,6 +107,7 @@ stages:
 
           - powershell: |
               [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+              $env:TF_PROXY_FROM_ENV="true"
               
               terraform init `
                 -backend-config="resource_group_name=$(backendResourceGroup)" `
